@@ -1,0 +1,51 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ master ]
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v4
+
+    - name: Install Rust
+      uses: dtolnay/rust-toolchain@stable
+
+    - name: Cache cargo
+      uses: actions/cache@v4
+      with:
+        path: ~/.cargo
+        key: ${{ runner.os }}-cargo-${{ hashFiles('Cargo.lock') }}
+
+    - name: Build Peekdown (release)
+      run: cargo build --release
+
+    - name: Install Inno Setup
+      run: choco install innosetup --no-progress -y
+
+    - name: Compile installer
+      run: ISCC installer.iss
+
+    - name: Upload setup artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: Peekdown-Setup
+        path: Peekdown-Setup-*.exe
+
+    - name: Create Release
+      id: create_release
+      uses: softprops/action-gh-release@v2
+      if: github.ref == 'refs/heads/master'
+      with:
+        name: Peekdown ${{ github.sha }}
+        tag_name: build-${{ github.run_number }}
+        files: Peekdown-Setup-*.exe
+        draft: false
+        prerelease: false
+        generate_release_notes: false

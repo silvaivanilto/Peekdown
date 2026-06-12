@@ -3,6 +3,7 @@ pub struct AppState {
     pub pending_file: Option<String>,
     pub pending_content: Option<String>,
     pub pending_title: Option<String>,
+    pub locale: String,
 }
 
 impl AppState {
@@ -12,6 +13,7 @@ impl AppState {
             pending_file: None,
             pending_content: None,
             pending_title: None,
+            locale: String::from("en"),
         }
     }
 }

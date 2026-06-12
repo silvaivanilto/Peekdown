@@ -42,9 +42,13 @@ pub fn handle_ipc_message(
                             "path": p
                         }));
                     }
-                    Err(e) => send_to_js(webview, "error", &serde_json::json!({
-                        "message": format!("Failed to open file: {e}")
-                    })),
+                    Err(e) => {
+                        let locale = state.lock().unwrap().locale.clone();
+                        let prefix = crate::i18n::get_translations(&locale).failed_open_file;
+                        send_to_js(webview, "error", &serde_json::json!({
+                            "message": format!("{}{}", prefix, e)
+                        }));
+                    }
                 }
             }
         }
@@ -57,9 +61,13 @@ pub fn handle_ipc_message(
                                 "path": path
                             }));
                         }
-                        Err(e) => send_to_js(webview, "error", &serde_json::json!({
-                            "message": format!("Failed to save: {e}")
-                        })),
+                        Err(e) => {
+                            let locale = state.lock().unwrap().locale.clone();
+                            let prefix = crate::i18n::get_translations(&locale).failed_save;
+                            send_to_js(webview, "error", &serde_json::json!({
+                                "message": format!("{}{}", prefix, e)
+                            }));
+                        }
                     }
                 } else {
                     handle_save_as(webview, parsed.content);
@@ -123,12 +131,19 @@ pub fn handle_ipc_message(
                             "path": p
                         }));
                     }
-                    Err(e) => send_to_js(webview, "error", &serde_json::json!({
-                        "message": format!("Failed to open file: {e}")
-                    })),
+                    Err(e) => {
+                        let locale = state.lock().unwrap().locale.clone();
+                        let prefix = crate::i18n::get_translations(&locale).failed_open_file;
+                        send_to_js(webview, "error", &serde_json::json!({
+                            "message": format!("{}{}", prefix, e)
+                        }));
+                    }
                 }
             } else if let Some(content) = pending_content {
-                let title = pending_title.unwrap_or_else(|| "stdin".to_string());
+                let locale = state.lock().unwrap().locale.clone();
+                let title = pending_title.unwrap_or_else(|| {
+                    crate::i18n::get_translations(&locale).stdin_label.to_string()
+                });
                 send_to_js(webview, "stdin_opened", &serde_json::json!({
                     "content": content,
                     "title": title
@@ -151,9 +166,13 @@ fn handle_save_as(
                         "path": path
                     }));
                 }
-                Err(e) => send_to_js(webview, "error", &serde_json::json!({
-                    "message": format!("Failed to save: {e}")
-                })),
+                Err(e) => {
+                    let locale = "en";
+                    let prefix = crate::i18n::get_translations(locale).failed_save;
+                    send_to_js(webview, "error", &serde_json::json!({
+                        "message": format!("{}{}", prefix, e)
+                    }));
+                }
             }
         }
     }

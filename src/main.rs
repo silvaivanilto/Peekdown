@@ -14,6 +14,7 @@ use windows::Win32::UI::WindowsAndMessaging::{SetWindowPos, SWP_ASYNCWINDOWPOS, 
 use wry::{WebViewBuilder, WebViewBuilderExtWindows, WebViewExtWindows};
 
 mod file_ops;
+mod i18n;
 mod ipc;
 mod state;
 mod window_state;
@@ -33,7 +34,9 @@ enum UserEvent {
 }
 
 fn main() {
+    let locale = i18n::detect_locale();
     let app_state = Arc::new(Mutex::new(state::AppState::new()));
+    app_state.lock().unwrap().locale = locale.to_string();
 
     // Parse CLI args
     let args: Vec<String> = std::env::args().skip(1).collect();
@@ -99,7 +102,8 @@ fn main() {
         .build(&event_loop)
         .unwrap();
 
-    let full_html = build_html();
+    let t = i18n::get_translations(locale);
+    let full_html = build_html(t);
     {
         app_state.lock().unwrap().html = full_html;
     }
@@ -251,13 +255,16 @@ fn escape_for_script_tag(js: &str) -> String {
     js.replace("</script", "<\\/script")
 }
 
-fn build_html() -> String {
-    // Build script tags with escaped content
+fn build_html(t: &i18n::Translations) -> String {
+    let i18n_json = serde_json::to_string(t).unwrap();
+    let i18n_tag = format!("<script>var __i18n={};</script>", i18n_json);
+
     let scripts = format!(
-        "<script>{}</script>\n<script>{}</script>\n<script>{}</script>\n<script>{}</script>\n<script>{}</script>\n<script>{}</script>",
+        "<script>{}</script>\n<script>{}</script>\n<script>{}</script>\n{}</script>\n<script>{}</script>\n<script>{}</script>\n<script>{}</script>",
         escape_for_script_tag(HLJS),
         escape_for_script_tag(MARKED_JS),
         escape_for_script_tag(PREVIEW_JS),
+        i18n_tag,
         escape_for_script_tag(TABS_JS),
         escape_for_script_tag(EDITOR_JS),
         escape_for_script_tag(APP_JS),

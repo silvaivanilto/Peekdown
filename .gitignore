@@ -1,4 +1,6 @@
 /target
+Peekdown-Setup-*.exe
+*.exe.WebView2/
 .claude/
 test.md
 test2.md
